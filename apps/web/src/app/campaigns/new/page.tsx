@@ -216,7 +216,7 @@ function NewCampaignContent() {
               <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 22, color: 'var(--text-primary)' }}>Message Source</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 22 }}>
                 <OptionCard active={sourceType === 'template'} icon={<IcFile />} title="Use Template" desc="Pick a saved template with spin syntax" onClick={() => setSourceType('template')} />
-                <OptionCard active={sourceType === 'ai'} icon={<IcBrain />} title="AI Brief" desc="Describe your offer and let NEXUS write it" onClick={() => setSourceType('ai')} />
+                <OptionCard active={sourceType === 'ai'} icon={<IcBrain />} title="AI Brief" desc="Describe your offer and let Sia AI write it" onClick={() => setSourceType('ai')} />
               </div>
 
               {sourceType === 'template' && (

@@ -220,7 +220,7 @@ function AIBrainTab() {
 
   return (
     <div>
-      <SectionTitle>NEXUS AI Brain</SectionTitle>
+      <SectionTitle>Sia AI Brain</SectionTitle>
       <div style={{ marginBottom: 20 }}>
         <div style={{ padding: '0 0 12px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
           <div style={{ ...label, marginBottom: 10 }}>Provider</div>

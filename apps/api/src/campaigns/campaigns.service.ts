@@ -61,6 +61,7 @@ export class CampaignsService {
   }
 
   async delete(id: string): Promise<void> {
+    await this.prisma.campaignMessage.deleteMany({ where: { campaignId: id } });
     await this.prisma.campaign.delete({ where: { id } });
   }
 

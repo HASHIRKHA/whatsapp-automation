@@ -17,9 +17,12 @@ export function Button({
 }: ButtonProps) {
   const styles: Record<string, React.CSSProperties> = {
     primary: {
-      background: 'var(--bg-accent)',
-      color: '#000000',
+      background: 'linear-gradient(135deg, #C9A84C 0%, #D4AF37 40%, #F5D08A 70%, #C9A84C 100%)',
+      color: '#0A0800',
       border: 'none',
+      boxShadow: '0 2px 12px rgba(212,175,55,0.25)',
+      fontWeight: 600,
+      letterSpacing: '0.3px',
     },
     danger: {
       background: 'transparent',

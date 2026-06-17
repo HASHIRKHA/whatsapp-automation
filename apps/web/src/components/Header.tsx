@@ -26,10 +26,10 @@ export function Header({ title, onRefresh }: HeaderProps) {
     <header
       style={{
         height: 64,
-        background: 'rgba(10,10,10,0.8)',
+        background: 'rgba(8,8,8,0.88)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        borderBottom: '1px solid rgba(212,175,55,0.08)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -62,10 +62,10 @@ export function Header({ title, onRefresh }: HeaderProps) {
 }
 
 const iconBtnStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.06)',
+  background: 'rgba(212,175,55,0.04)',
+  border: '1px solid rgba(212,175,55,0.1)',
   borderRadius: 7,
-  color: 'var(--text-secondary)',
+  color: 'rgba(212,175,55,0.5)',
   cursor: 'pointer',
   padding: 7,
   display: 'flex',
