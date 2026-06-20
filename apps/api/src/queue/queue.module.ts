@@ -33,6 +33,7 @@ class RedisShutdownService implements OnModuleDestroy {
             port: Number(url.port) || 6379,
             password: url.password || undefined,
             db: Number(url.pathname.slice(1)) || 0,
+            tls: url.protocol === 'rediss:' ? {} : undefined,
           },
         };
       },

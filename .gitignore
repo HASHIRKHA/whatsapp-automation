@@ -61,3 +61,6 @@ web.log
 web-err.log
 
 .vercel
+
+# Local Railway ops/debug scripts (contain API tokens, never commit)
+railway-*.mjs
