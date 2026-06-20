@@ -28,6 +28,24 @@ RUN pnpm --filter @wa-engine/shared build
 RUN pnpm --filter @wa-engine/api prisma:generate
 RUN pnpm --filter @wa-engine/api build
 
+# Fallback: if nest build didn't emit per-file JS (e.g. it used webpack or
+# only emitted the entry point), run tsc directly to get standard output.
+RUN if ! test -f /app/apps/api/dist/app.module.js; then \
+      echo "=== nest build output incomplete — running tsc directly ==="; \
+      cd /app/apps/api; \
+      if test -f node_modules/.bin/tsc; then \
+        node_modules/.bin/tsc -p tsconfig.build.json; \
+      else \
+        ../../node_modules/.bin/tsc -p tsconfig.build.json; \
+      fi; \
+    fi
+
+# Hard verify — fail the Docker build loudly if the module is still missing
+RUN test -f /app/apps/api/dist/app.module.js || \
+    { echo "FATAL: dist/app.module.js missing after all build attempts"; \
+      ls -la /app/apps/api/dist/ 2>/dev/null || echo "(dist is empty)"; \
+      exit 1; }
+
 # ─── Stage 3: Production runner ───────────────────────────────────────────────
 FROM node:22-alpine AS runner
 RUN apk add --no-cache openssl
