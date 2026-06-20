@@ -13,7 +13,7 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # ─── Stage 2: Build ───────────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
-RUN corepack enable
+RUN apk add --no-cache openssl && corepack enable
 
 WORKDIR /app
 COPY --from=deps /app .
@@ -30,6 +30,7 @@ RUN pnpm --filter @wa-engine/api build
 
 # ─── Stage 3: Production runner ───────────────────────────────────────────────
 FROM node:22-alpine AS runner
+RUN apk add --no-cache openssl
 ENV NODE_ENV=production
 
 RUN addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001
