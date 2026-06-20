@@ -1,13 +1,10 @@
-import { Injectable, OnModuleDestroy, Logger } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleDestroy {
-  private readonly logger = new Logger(PrismaService.name);
-
-  // No eager $connect() — Prisma connects lazily on first query.
-  // This allows the NestJS app to start even when the DB is temporarily
-  // unreachable (e.g. during a cold-start race with the database service).
+  // No eager $connect() — Prisma connects lazily on first query so the app
+  // starts even when the DB is temporarily unreachable at cold-start.
 
   async onModuleDestroy(): Promise<void> {
     await this.$disconnect();
