@@ -29,15 +29,18 @@ jobs:
           context: .
           file: apps/api/Dockerfile
           push: true
-          tags: ghcr.io/hashirkha/wa-api:latest
+          tags: |
+            ghcr.io/hashirkha/wa-api:latest
+            ghcr.io/hashirkha/wa-api:${{ github.sha }}
 
       - name: Deploy image to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           node -e "
           const https = require('https');
-          const image = 'ghcr.io/hashirkha/wa-api:latest';
+          const image = 'ghcr.io/hashirkha/wa-api:' + process.env.IMAGE_TAG;
           const mutation = 'mutation { serviceConnect(id: \"14071e13-7105-49b2-8760-92a81c4479c5\", input: { image: \"' + image + '\" }) { id name } }';
           const body = JSON.stringify({ query: mutation });
           const req = https.request({
