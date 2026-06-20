@@ -8,24 +8,57 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          node-version: '22'
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/wa-api:latest
 
-      - name: Link Railway project
-        run: |
-          mkdir -p .railway
-          echo '{"projectId":"b9e5c56f-dae9-4b8b-a21f-cb2156f23f48","environmentName":"production","serviceId":"14071e13-7105-49b2-8760-92a81c4479c5"}' > .railway/config.json
-
-      - name: Deploy to Railway
+      - name: Deploy image to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --detach
+        run: |
+          node -e "
+          const https = require('https');
+          const image = 'ghcr.io/${{ github.repository_owner }}/wa-api:latest';
+          const mutation = 'mutation { serviceConnect(id: \"14071e13-7105-49b2-8760-92a81c4479c5\", input: { image: \"' + image + '\" }) { id name } }';
+          const body = JSON.stringify({ query: mutation });
+          const req = https.request({
+            hostname: 'backboard.railway.app',
+            path: '/graphql/v2',
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + process.env.RAILWAY_TOKEN,
+              'Content-Type': 'application/json',
+              'apollographql-client-name': 'railway-api',
+              'Content-Length': Buffer.byteLength(body)
+            }
+          }, res => {
+            let d = '';
+            res.on('data', c => d += c);
+            res.on('end', () => {
+              const r = JSON.parse(d);
+              console.log(JSON.stringify(r, null, 2));
+              if (r.errors) process.exit(1);
+            });
+          });
+          req.write(body);
+          req.end();
+          "
