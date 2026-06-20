@@ -22,10 +22,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : 'Internal server error';
+    let message: string | string[] = 'Internal server error';
+    if (exception instanceof HttpException) {
+      const response = exception.getResponse();
+      message =
+        typeof response === 'string'
+          ? response
+          : ((response as { message?: string | string[] }).message ?? exception.message);
+    }
 
     if (!(exception instanceof HttpException)) {
       this.log.error(`Unhandled exception on ${request.url}: ${String(exception)}`);
