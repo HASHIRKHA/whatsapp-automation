@@ -8,7 +8,7 @@ import { Button } from '@/components/Button';
 import { useToast, ToastProvider } from '@/components/Toast';
 import { apiFetch } from '@/lib/api';
 import { spinText } from '@wa-engine/shared';
-import type { Template, SmartList } from '@/types/api';
+import type { Template, SmartList, Session } from '@/types/api';
 
 const STEPS = ['Basics', 'Message', 'Contacts', 'Schedule', 'Review'];
 
@@ -104,6 +104,7 @@ function NewCampaignContent() {
   const [aiTone, setAiTone] = useState('Friendly');
   const [aiCount, setAiCount] = useState(10);
   const [smartListId, setSmartListId] = useState('');
+  const [selectedSessionIds, setSelectedSessionIds] = useState<string[] | null>(null);
   const [activeFrom, setActiveFrom] = useState(8);
   const [activeTo, setActiveTo] = useState(22);
   const [aiMessages, setAiMessages] = useState<string[]>([]);
@@ -117,9 +118,17 @@ function NewCampaignContent() {
 
   const { data: templates } = useSWR<Template[]>('/templates', (url: string) => apiFetch<Template[]>(url));
   const { data: smartLists } = useSWR<SmartList[]>('/smart-lists', (url: string) => apiFetch<SmartList[]>(url));
+  const { data: allSessions } = useSWR<Session[]>('/sessions', (url: string) => apiFetch<Session[]>(url));
 
   const selectedTemplate = templates?.find((t) => t.id === templateId);
   const selectedSmartList = smartLists?.find((sl) => sl.id === smartListId);
+  const onlineSessions = (allSessions ?? []).filter((s) => s.status === 'ONLINE' && s.mode === mode);
+  const effectiveSessionIds = selectedSessionIds ?? onlineSessions.map((s) => s.id);
+
+  const toggleSession = (sessionId: string) => {
+    const current = selectedSessionIds ?? onlineSessions.map((s) => s.id);
+    setSelectedSessionIds(current.includes(sessionId) ? current.filter((s) => s !== sessionId) : [...current, sessionId]);
+  };
 
   const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -185,9 +194,13 @@ function NewCampaignContent() {
       });
 
       if (!asDraft && smartListId) {
+        const allSessionsSelected = effectiveSessionIds.length === onlineSessions.length;
         await apiFetch(`/campaigns/${campaign.id}/launch`, {
           method: 'POST',
-          body: JSON.stringify({ smartListId }),
+          body: JSON.stringify({
+            smartListId,
+            ...(!allSessionsSelected ? { sessionIds: effectiveSessionIds } : {}),
+          }),
         });
         toast('Campaign launched!', 'success');
       } else {
@@ -246,9 +259,59 @@ function NewCampaignContent() {
               <div>
                 <label style={labelStyle}>Connection Mode</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <OptionCard active={mode === 'CLOUD_API'} icon={<IcCloud />} title="Cloud API" desc="Official Meta Business. Compliant, 100K+/day." onClick={() => setMode('CLOUD_API')} />
-                  <OptionCard active={mode === 'BAILEYS'} icon={<IcWifi />} title="WebSocket" desc="Any number. Zero cost, instant setup." onClick={() => setMode('BAILEYS')} />
+                  <OptionCard active={mode === 'CLOUD_API'} icon={<IcCloud />} title="Cloud API" desc="Official Meta Business. Compliant, 100K+/day." onClick={() => { setMode('CLOUD_API'); setSelectedSessionIds(null); }} />
+                  <OptionCard active={mode === 'BAILEYS'} icon={<IcWifi />} title="WebSocket" desc="Any number. Zero cost, instant setup." onClick={() => { setMode('BAILEYS'); setSelectedSessionIds(null); }} />
                 </div>
+              </div>
+
+              <div style={{ marginTop: 22 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <label style={{ ...labelStyle, marginBottom: 0 }}>Send from</label>
+                  {onlineSessions.length > 0 && (
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{effectiveSessionIds.length}/{onlineSessions.length} selected</span>
+                  )}
+                </div>
+                {onlineSessions.length === 0 ? (
+                  <div style={{ fontSize: 12, color: '#f59e0b', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, padding: '10px 14px' }}>
+                    No ONLINE {mode === 'CLOUD_API' ? 'Cloud API' : 'WebSocket'} sessions available. Connect a session first, or the campaign will auto-pause when launched.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {onlineSessions.map((s) => {
+                      const isSelected = effectiveSessionIds.includes(s.id);
+                      return (
+                        <div
+                          key={s.id}
+                          onClick={() => toggleSession(s.id)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            padding: '10px 12px', borderRadius: 8, cursor: 'pointer', transition: 'all 0.15s',
+                            border: `1px solid ${isSelected ? 'rgba(212,175,55,0.35)' : 'rgba(255,255,255,0.06)'}`,
+                            background: isSelected ? 'rgba(212,175,55,0.07)' : 'rgba(255,255,255,0.02)',
+                          }}
+                        >
+                          <div style={{
+                            width: 16, height: 16, borderRadius: 4, flexShrink: 0,
+                            border: `1.5px solid ${isSelected ? '#D4AF37' : 'rgba(255,255,255,0.2)'}`,
+                            background: isSelected ? '#D4AF37' : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            {isSelected && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0A0800" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                          </div>
+                          <div style={{ flex: 1, overflow: 'hidden' }}>
+                            <div style={{ fontSize: 12, fontWeight: 500, color: isSelected ? '#D4AF37' : 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {s.phoneNumber ?? s.label}
+                            </div>
+                            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 1 }}>
+                              Day {s.warmupDay} · {s.dailySent} sent today
+                            </div>
+                          </div>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#25d366', flexShrink: 0, display: 'inline-block' }} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -480,6 +543,7 @@ function NewCampaignContent() {
                 {[
                   { label: 'Campaign Name', value: name || '(unnamed)' },
                   { label: 'Mode', value: mode === 'CLOUD_API' ? 'Cloud API' : 'WebSocket' },
+                  { label: 'Send From', value: onlineSessions.length === 0 ? 'No sessions online' : `${effectiveSessionIds.length} of ${onlineSessions.length} session(s)` },
                   { label: 'Message Source', value: sourceType === 'template' ? (selectedTemplate?.name ?? 'None selected') : `AI Generated (${aiMessages.length} messages)` },
                   { label: 'Attachment', value: mediaFilename || 'None' },
                   { label: 'Smart List', value: selectedSmartList ? `${selectedSmartList.name} (${selectedSmartList.contactCount} contacts)` : 'None selected' },
@@ -518,7 +582,7 @@ function NewCampaignContent() {
             ) : (
               <>
                 <Button variant="outline" loading={loading} onClick={() => handleLaunch(true)}>Save as Draft</Button>
-                <Button loading={loading} onClick={() => handleLaunch(false)} disabled={!smartListId}>Launch Now</Button>
+                <Button loading={loading} onClick={() => handleLaunch(false)} disabled={!smartListId || effectiveSessionIds.length === 0}>Launch Now</Button>
               </>
             )}
           </div>
