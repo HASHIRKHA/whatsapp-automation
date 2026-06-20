@@ -29,7 +29,7 @@ jobs:
           context: .
           file: apps/api/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/wa-api:latest
+          tags: ghcr.io/hashirkha/wa-api:latest
 
       - name: Deploy image to Railway
         env:
@@ -37,7 +37,7 @@ jobs:
         run: |
           node -e "
           const https = require('https');
-          const image = 'ghcr.io/${{ github.repository_owner }}/wa-api:latest';
+          const image = 'ghcr.io/hashirkha/wa-api:latest';
           const mutation = 'mutation { serviceConnect(id: \"14071e13-7105-49b2-8760-92a81c4479c5\", input: { image: \"' + image + '\" }) { id name } }';
           const body = JSON.stringify({ query: mutation });
           const req = https.request({
