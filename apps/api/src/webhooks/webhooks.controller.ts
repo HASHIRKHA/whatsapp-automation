@@ -27,8 +27,11 @@ export class WebhooksController {
     private readonly webhooks: WebhooksService,
     config: ConfigService,
   ) {
-    this.verifyToken = config.getOrThrow<string>('META_VERIFY_TOKEN');
+    this.verifyToken = config.get<string>('META_VERIFY_TOKEN') ?? '';
     this.appSecret = config.get<string>('META_APP_SECRET');
+    if (!this.verifyToken) {
+      this.log.warn('META_VERIFY_TOKEN not set — Cloud API webhook verification will always fail');
+    }
     if (!this.appSecret) {
       this.log.warn('META_APP_SECRET not set — webhook HMAC validation is DISABLED');
     }
