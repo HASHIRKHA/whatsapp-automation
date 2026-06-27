@@ -7,7 +7,7 @@ export function getSocket(): Socket {
     throw new Error('getSocket() must only be called in a browser context');
   }
   if (!socket) {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'; // NEXT_PUBLIC_API_URL must be set in Vercel env vars
     socket = io(apiUrl, {
       transports: ['polling', 'websocket'],
       reconnectionDelay: 2000,
