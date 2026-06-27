@@ -22,6 +22,7 @@ ENV NEXT_OUTPUT=standalone
 
 WORKDIR /app
 COPY --from=deps /app .
+COPY tsconfig.json ./
 
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web
@@ -39,7 +40,7 @@ WORKDIR /app
 
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public 2>/dev/null || true
+RUN mkdir -p ./apps/web/public && chown nextjs:nodejs ./apps/web/public
 
 USER nextjs
 EXPOSE 3000

@@ -53,6 +53,7 @@ COPY --from=builder --chown=nestjs:nodejs /app/packages/shared ./packages/shared
 # Copy startup script and make executable before dropping root
 COPY --from=builder /app/apps/api/start.sh ./apps/api/start.sh
 RUN chmod +x ./apps/api/start.sh && chown nestjs:nodejs ./apps/api/start.sh
+RUN sed -i 's/\r//g' ./apps/api/start.sh
 
 WORKDIR /app/apps/api
 USER nestjs
@@ -60,4 +61,4 @@ EXPOSE 3001
 
 # start.sh runs `prisma migrate deploy` then starts the server.
 # Migrations are idempotent — safe to run on every restart.
-CMD ["./start.sh"]
+CMD ["sh", "./start.sh"]
